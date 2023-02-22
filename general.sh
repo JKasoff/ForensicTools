@@ -8,20 +8,23 @@
 
 
 #Welcome Message
-echo ""
-echo "Forensic Script V1.2"
-echo "Created By Jordan Kasoff"
-echo ""
+echo "
+===========================================
+          Forensic Script V1.2
+         Created By Jordan Kasoff
+===========================================
+"
 echo "Please note, SUDO is required"
 
 #Global Settings
-brief_output=0
-while getopts "b:" OPTION; do
+while getopts ":bf:" OPTION; do
     case "${OPTION}" in
-        b)
-          brief_output=1 #true (boolean)
-          echo "Brief Mode Engaged"
-          ;;
+          b) brief_output=1 #true (boolean)
+          echo "Brief Verbose Mode: Engaged";;
+        f) filename="$OPTARG"
+          echo "$filename";;
+
+
         \?) # Invalid option
          echo "Error: Invalid option"
          exit;;
@@ -34,17 +37,20 @@ done
 #Get directory of the script, create report file in same location
 redirect_output() {
 	location=$(pwd)
-	filename="report.txt"
+	if [-z ${filename}];
+	then 	filename="report.txt";
+  fi
 	final_location=$location"/"$filename
 	if test -f "$final_location"; then #check if file exists
 		echo "$final_location exists, rewriting"
-		echo "Forensic Report"  > $final_location #rewrite file with title
-		echo  " " >> $final_location #append to file
 	else
-		touch $final_location #create file if it does not
+		touch "$final_location" #create file if it does not
 		echo "File Created"
 	fi
-
+  echo "Forensic Report"  > "$final_location" #rewrite file with title
+	identity=$(whoami)
+	echo "Run As: "  "$identity">> "$final_location" #rewrite file with title
+	echo  " " >> "$final_location" #append space to file
 }
 redirect_output
 
@@ -53,8 +59,8 @@ redirect_output
 get_time_data() {
 	curr_time=$(date) #save current time (date) to variable "curr_time"
 	time_up=$(uptime)
-	echo "System Time: " $curr_time >> $final_location # append variable to file
-	echo "Uptime:" $time_up >> $final_location
+	echo "System Time: " "$curr_time" >> "$final_location" # append variable to file
+	echo "Uptime:" "$time_up" >> "$final_location"
 	echo ""
 	echo "Wrote Time Data"
 }
@@ -115,7 +121,7 @@ get_system_data
 
 get_network_data(){
 	echo "" >> $final_location
-	echo "Netowrk Information:" >> $final_location
+	echo "Network Information:" >> $final_location
 	for interface in $(ls /sys/class/net)
 	do
 
@@ -128,7 +134,7 @@ get_network_data(){
 		then
 			echo ""
 		else
-			echo "Promiscious Mode Enabled" >> $final_location
+			echo "Promiscuous Mode Enabled" >> $final_location
 		fi
 		echo " " >> $final_location
 	done
@@ -140,7 +146,7 @@ get_network_data(){
 	else
 		network_conn=$(netstat|head -n 15)
 	fi
-	printf "%s\n"  "$network_conn" >> $final_location
+	printf "%s\n"  "$network_conn" >> "$final_location"
 
 	echo ""
 	echo "Wrote Network Data"
@@ -249,10 +255,10 @@ get_other_data(){
 	printf "%s\n"  "$arp_list" >> $final_location
 	echo "" >> $final_location
 
-	echo "Command History" >> $final_location
+	echo "Command History" >> "$final_location"
 	history_list=$(history | head -n 5)
-	printf "%s\n"  "$history_list" >> $final_location
-	echo "" >> $final_location
+	printf "%s\n"  "$history_list" >> "$final_location"
+	echo "" >> "$final_location"
 
 	echo ""
 
