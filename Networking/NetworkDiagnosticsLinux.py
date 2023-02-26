@@ -11,20 +11,31 @@ import sys
 FileOutput = False
 
 
+def printer(message):
+    if FileOutput:
+        file1 = open('report.txt', 'a')
+        file1.write(message)
+    else:
+        print(message)
+
+
 # prepares for the network connectivity tests
 def init():
+    os.system('clear')  # clears terminal for a clean view of the test
     if sys.argv[1] == "-o":
         global FileOutput
         FileOutput = True
-    os.system('clear')  # clears terminal for a clean view of the test
+        if os.path.exists("report.txt"):
+            os.remove("report.txt")
+        else:
+            os.popen("touch report.txt")
+
     UserName = os.popen("whoami").read().rstrip()
-    print("===========================================")
-    print("          Networking  Script V1.2")
-    print("          Created By Jordan Kasoff")
-    print("===========================================\n")
-    print("Welcome: " + UserName)
-    print("Output Mode: ")
-    exit()
+    printer("===========================================\n")
+    printer("          Networking  Script V1.2\n")
+    printer("          Created By Jordan Kasoff\n")
+    printer("===========================================\n")
+    printer("Welcome: " + UserName)
 
 
 # gets gateway ip address for the system
@@ -32,16 +43,12 @@ def init():
 # ends test if interface is not properly configured
 def get_gateway():
     try:
-        temp = os.popen(
-            "ip route|grep default")  # displays routes (ip route) that start with keyword "default" (grep default)
+        # displays routes (ip route) that start with keyword "default" (grep default)
+        tempGateway = os.popen("ip route|grep default").read().rstrip()
         # turns command printout into readable python data types
-        str_tmp = temp.read()
-        temp = str_tmp.rstrip()
-        arr1 = temp.split(' ')
-        gateway = arr1[2]  # if correctly configured, gateway address is the 3rd "word" in the printout
-        for i in range(0, 5):  # more spacing
-            print(" ")
-        print("Your Default Gateway is " + gateway)
+        tempGateway = tempGateway.split(' ')
+        gateway = tempGateway[2]  # if correctly configured, gateway address is the 3rd "word" in the printout
+        printer("\n\n" + tempGateway[4] + " Default Gateway: " + gateway)
         return gateway
 
     # IF Configuration file is not proper structured, will return an index error,
@@ -50,73 +57,64 @@ def get_gateway():
         print(" ")
         print("Interface Configuration Error")
         print("Gateway cannot be detected")
-        print("Script Completed")
-        exit()
 
 
-# method variable (gateway): determined ip address of the computer's gateway from get_gateway, used for pinging
-# Tests ping to the gateway, reports if ping was successful or not
-def ping_gateway(gateway):
-    temp = os.popen("ping " + gateway + " -c4")  # pings gateway 4 times
+def get_dns():
+    try:
+        command = "resolvectl status |grep \"Current DNS Server\""
+        tempDNS = os.popen(command).read().rstrip()
+        # turns command printout into readable python data types
+        tempDNS = tempDNS.split(' ')
+        DNS = tempDNS[3]  # if correctly configured, gateway address is the 3rd "word" in the printout
+        printer("\n\nCurrent DNS Server: " + DNS)
+        return DNS
+
+    # IF Configuration file is not proper structured, will return an index error,
+    # this result requires looking at connection and configuration to DF Gateway
+    except IndexError:
+        print(" ")
+        print("DNS Configuration Error")
+        print("DNS cannot be detected")
+
+
+# Tests ping to the remote device, reports if ping was successful or not
+def ping_device(deviceAddress):
+    result = os.popen("ping " + deviceAddress + " -c4").read().rstrip()  # pings gateway 4 times
     # turns command printout into readable python data types
-    str_tmp = temp.read()
-    temp = str_tmp.rstrip()
-    arr1 = temp.split(' ')
     # sees if there is a 0% error rate in the ping result
-    if "0%" in arr1:
-        print("Ping to Gateway: Successful")
+    if "0% packet loss" in result:
+        printer("\nPing to " + deviceAddress + " : Successful\n")
         return 1
     # if not, there is an error, and the test has failed
-    else:
-        print("Ping to Gateway: Unsuccessful")
+    elif "100% packet loss" in result:
+        printer("\nPing to " + deviceAddress + " : Unsuccessful\n")
         return 0
-
-
-# Tests ping to a remote computer, reports if ping was successful or not
-def ping_remote():
-    temp = os.popen("ping 50.116.1.225 -c4")  # pings remote computer IP's address (netcat) 4 times
-    # turns command printout into readable python data types
-    str_tmp = temp.read()
-    temp = str_tmp.rstrip()
-    arr1 = temp.split(' ')
-    # sees if there is a 0% error rate in the ping result
-    if "0%" in arr1:
-        print("Ping to Remote: Successful")
-        return 1
-    # if not, there is an error, and the test has failed
     else:
-        print("Ping to Remote: Unsuccessful")
-        return 0
-
-
-# Tests ping to a remote gateway using a host name to test dns revolution , reports if ping was successful or not
-def ping_remoteDNS():
-    temp = os.popen("ping google.com -c4")  # pings remote computer IP's address (google.com) 4 times using a host name
-    # turns command printout into readable python data types
-
-    str_tmp = temp.read()
-    temp = str_tmp.rstrip()
-    arr1 = temp.split(' ')
-    # sees if there is a 0% error rate in the ping result
-    if "0%" in arr1:
-        print("DNS Resolution: Successful")
-        return 1
-    # if not, there is an error, and the test has failed
-    else:
-        print("DNS Resolution: Unsuccessful")
-        return 0
+        printer("\nPing to " + deviceAddress + " : Indeterminate \n")
+        return 0.5
 
 
 def main():
-    score = 0  # counter for succulence connectivity tests
     init()
+    printer("\n\nGateway Test")
     gateway = get_gateway()
-    score += ping_gateway(gateway)
-    score += ping_remote()
-    score += ping_remoteDNS()
-    final = int(float(score) / float(3) * 100)  # calculates successful networking percentage
-    print("Your Network Connectivity is at %" + str(final))
-    print("Script Completed")
+    gateway_test = ping_device(gateway)
+    if gateway_test < 1:
+        printer("Warning: Possible Gateway Connectivity Issues")
+        exit()
+    printer("\n\nLocal DNS Test")
+    Default_DNS = get_dns()
+    dns_test = ping_device(Default_DNS)
+    if dns_test < 1:
+        printer("Warning: Possible DNS Connectivity Issues")
+        exit()
+    printer("\n\nRemote Connectivity Test")
+    Remote_Device = ping_device("8.8.8.8")
+    if Remote_Device < 1:
+        printer("Warning: Possible Remote Device Connectivity Issues")
+    Remote_DNS = ping_device("google.com")
+
+    exit()
 
 
 main()
