@@ -29,6 +29,9 @@ while getopts "b:f:s:" OPTION; do
         \?)
             # Invalid option
             echo "Error: Invalid option"
+            echo " -b: Brief Output enabled "
+            echo " -f filename.txt: File Output enabled "
+            echo " -s: Enable Sudo Commands"
             exit
             ;;
     esac
