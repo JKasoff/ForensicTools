@@ -21,21 +21,28 @@ def printer(message):
 
 # prepares for the network connectivity tests
 def init():
-    os.system('clear')  # clears terminal for a clean view of the test
-    if sys.argv[1] == "-o":
-        global FileOutput
-        FileOutput = True
-        if os.path.exists("report.txt"):
-            os.remove("report.txt")
-        else:
-            os.popen("touch report.txt")
-
-    UserName = os.popen("whoami").read().rstrip()
-    printer("===========================================\n")
-    printer("          Networking  Script V1.2\n")
-    printer("          Created By Jordan Kasoff\n")
-    printer("===========================================\n")
-    printer("Welcome: " + UserName)
+    os.system('cls')  # clears terminal for a clean view of the test
+    try:
+        if sys.argv[1] == "-o":
+            global FileOutput
+            FileOutput = True
+            if os.path.exists("report.txt"):
+                os.remove("report.txt")
+            else:
+                os.popen("touch report.txt")
+            UserName = os.popen("whoami").read().rstrip()
+            printer("===========================================\n")
+            printer("          NetworkDiagnostics  Script V1.2\n")
+            printer("          Created By Jordan Kasoff\n")
+            printer("===========================================\n")
+            printer("Welcome: " + UserName)
+    except IndexError:
+        UserName = os.popen("whoami").read().rstrip()
+        printer("===========================================\n")
+        printer("          NetworkDiagnostics  Script V1.2\n")
+        printer("          Created By Jordan Kasoff\n")
+        printer("===========================================\n")
+        printer("Welcome: " + UserName)
 
 
 # gets gateway ip address for the system
@@ -44,11 +51,19 @@ def init():
 def get_gateway():
     try:
         # displays routes (ip route) that start with keyword "default" (grep default)
-        tempGateway = os.popen("ip route|grep default").read().rstrip()
+        tempGateway = os.popen("ipconfig /all | find \"Default Gateway\"").read().rstrip()
         # turns command printout into readable python data types
-        tempGateway = tempGateway.split(' ')
-        gateway = tempGateway[2]  # if correctly configured, gateway address is the 3rd "word" in the printout
-        printer("\n\n" + tempGateway[4] + " Default Gateway: " + gateway)
+        tempGateway = tempGateway.split('Default Gateway . . . . . . . . . :')
+        #tempGateway = tempGateway.split('  b\n')
+        gateway = []
+        for i in tempGateway:
+            if len(i) > 7:
+                print("check")
+                gateway.append(i)
+        #print gateway
+        #printer("\n\n" + tempGateway[4] + " Default Gateway: " + gateway)
+        print(gateway)
+        exit()
         return gateway
 
     # IF Configuration file is not proper structured, will return an index error,
