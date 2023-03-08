@@ -3,7 +3,9 @@
 
 
 # Requirements:
-# Linux/Unix OS (commands listed require unix/linux commands to operate properly, will not operate correctly on windows)
+# Windows
+
+# To Do: Multi Interfaced Boxes
 
 import os  # used to run commands on Linux system
 import sys
@@ -30,12 +32,12 @@ def init():
                 os.remove("report.txt")
             else:
                 os.popen("touch report.txt")
-            UserName = os.popen("whoami").read().rstrip()
-            printer("===========================================\n")
-            printer("          NetworkDiagnostics  Script V1.2\n")
-            printer("          Created By Jordan Kasoff\n")
-            printer("===========================================\n")
-            printer("Welcome: " + UserName)
+        UserName = os.popen("whoami").read().rstrip()
+        printer("===========================================\n")
+        printer("          NetworkDiagnostics  Script V1.2\n")
+        printer("          Created By Jordan Kasoff\n")
+        printer("===========================================\n")
+        printer("Welcome: " + UserName)
     except IndexError:
         UserName = os.popen("whoami").read().rstrip()
         printer("===========================================\n")
@@ -57,13 +59,12 @@ def get_gateway():
         #tempGateway = tempGateway.split('  b\n')
         gateway = []
         for i in tempGateway:
+            #expand to usage with multiple gateways
             if len(i) > 7:
-                print("check")
                 gateway.append(i)
-        #print gateway
-        #printer("\n\n" + tempGateway[4] + " Default Gateway: " + gateway)
-        print(gateway)
-        exit()
+        gateway = gateway[0].rstrip()
+
+        printer(" Default Gateway: " + gateway)
         return gateway
 
     # IF Configuration file is not proper structured, will return an index error,
@@ -76,12 +77,17 @@ def get_gateway():
 
 def get_dns():
     try:
-        command = "resolvectl status |grep \"Current DNS Server\""
+        command = "ipconfig /all | find \"DNS Server\""
         tempDNS = os.popen(command).read().rstrip()
         # turns command printout into readable python data types
-        tempDNS = tempDNS.split(' ')
-        DNS = tempDNS[3]  # if correctly configured, gateway address is the 3rd "word" in the printout
-        printer("\n\nCurrent DNS Server: " + DNS)
+        tempDNS = tempDNS.split('DNS Servers . . . . . . . . . . . :')
+        # tempGateway = tempGateway.split('  b\n')
+        DNS = []
+        for i in tempDNS:
+            # expand to usage with multiple gateways
+            if len(i) > 7:
+                DNS.append(i)
+        DNS = DNS[0].rstrip()
         return DNS
 
     # IF Configuration file is not proper structured, will return an index error,
@@ -94,14 +100,15 @@ def get_dns():
 
 # Tests ping to the remote device, reports if ping was successful or not
 def ping_device(deviceAddress):
-    result = os.popen("ping " + deviceAddress + " -c4").read().rstrip()  # pings gateway 4 times
+    command = "ping " + deviceAddress + " -n 3"
+    result = os.popen(command).read().rstrip()  # pings gateway 4 times
     # turns command printout into readable python data types
     # sees if there is a 0% error rate in the ping result
-    if "0% packet loss" in result:
+    if "0% loss" in result:
         printer("\nPing to " + deviceAddress + " : Successful\n")
         return 1
     # if not, there is an error, and the test has failed
-    elif "100% packet loss" in result:
+    elif "100% loss" in result:
         printer("\nPing to " + deviceAddress + " : Unsuccessful\n")
         return 0
     else:
