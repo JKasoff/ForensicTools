@@ -1,0 +1,7 @@
+===========================================
+          NetworkDiagnostics  Script V1.2
+          Created By Jordan Kasoff
+===========================================
+Welcome: jordan-pc\jordan kasoff
+
+Gateway Test
